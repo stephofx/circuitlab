@@ -48,6 +48,13 @@ import javafx.event.EventHandler;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.image.Image;
+import javafx.scene.layout.*;
+import com.interactivemesh.jfx.importer.stl.StlMeshImporter;
+import java.net.URL;
+import javafx.scene.shape.TriangleMesh;
+import java.lang.Exception;
+import javafx.scene.shape.*;
+import javafx.scene.transform.Rotate;
 
 /**
  *
@@ -82,13 +89,43 @@ public class CircuitLab extends Application {
     private static final double BOX_LENGTH = 150.0;
     
     @Override
-    public void start(Stage primaryStage) {
-        
+    public void start(Stage primaryStage) {    
         buildScene();
         buildCamera();
         buildBox();
-        Scene scene = new Scene(root, 1024, 768, true);
+        /*BackgroundImage myBI= new BackgroundImage(new Image("http://fortbendlifestylesandhomes.com/wp-content/uploads/2014/03/nithin-parsan-009-767x1024.jpg",1000,150,false,true),
+        BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,
+          BackgroundSize.DEFAULT);
+        StackPane stack = new StackPane(root);
+        //stack.setId("pane");
+        stack.setBackground(new Background(myBI));*/
         
+        StackPane stack = new StackPane(root);
+        StlMeshImporter stlImporter = new StlMeshImporter();
+        try {
+            URL modelUrl = this.getClass().getResource("resistor.stl");
+            stlImporter.read(modelUrl);            
+        }
+        catch (Exception e) {
+            // handle exception
+        }
+        TriangleMesh stlMesh = stlImporter.getImport();
+        MeshView resistor = new MeshView(stlMesh);
+        resistor.setTranslateX(58); //border length approx 5
+        resistor.setTranslateY(65);
+        resistor.setTranslateZ(60+5);
+        resistor.setRotationAxis(Rotate.X_AXIS);
+        resistor.setRotate(90.0);
+        //Xform resistorXform = new Xform();
+        //resistorXform.setRotate(0,90,0);
+        Group tmpGroup = new Group();
+        tmpGroup.getChildren().addAll(resistor);
+        tmpGroup.setVisible(true);
+        world.getChildren().addAll(tmpGroup);
+        
+        Scene scene = new Scene(stack, 1024, 768, true);
+        //stack.getChildren().add(root);
+        //scene.getStylesheets().addAll(this.getClass().getResource("style.css").toExternalForm());
         
         handleKeyboard(scene, world);
         handleMouse(scene, world);
@@ -97,6 +134,7 @@ public class CircuitLab extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         scene.setCamera(camera);
+        
     }
     
     private void buildScene() {
@@ -119,7 +157,8 @@ public class CircuitLab extends Application {
     }
     
     private void buildBox() {
-        final String MAP = "https://d2v9y0dukr6mq2.cloudfront.net/video/thumbnail/Cbhl4XR/grid-background-in-motion_4ydoij-ox__F0000.png";
+        final String MAP = "http://3.bp.blogspot.com/-xbCBk-wQHqs/TyLMbgjTdzI/AAAAAAAABio/dIJldqxQSA0/s1600/5x5.grid+ref+1.jpeg";
+        //final String MAP = "grid.png";
         final PhongMaterial grid = new PhongMaterial();
         grid.setDiffuseMap(new Image(MAP, 1920/2d, 1080/2d, true, true));
 
