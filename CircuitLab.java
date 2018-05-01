@@ -55,6 +55,8 @@ import javafx.scene.shape.TriangleMesh;
 import java.lang.Exception;
 import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
+import javafx.scene.control.*;
+import javafx.geometry.*;
 
 /**
  *
@@ -63,6 +65,10 @@ import javafx.scene.transform.Rotate;
 public class CircuitLab extends Application {
     
     final Group root = new Group();
+    
+    //final String[] imageNames = {"resistor.stl", "capacitor.stl", ""};
+    final TitledPane[] tps = new TitledPane[3];
+    
     private static final double CONTROL_MULTIPLIER = 0.1;    
     private static final double SHIFT_MULTIPLIER = 10.0;    
     private static final double MOUSE_SPEED = 0.1;    
@@ -100,7 +106,7 @@ public class CircuitLab extends Application {
         //stack.setId("pane");
         stack.setBackground(new Background(myBI));*/
         
-        StackPane stack = new StackPane(root);
+        //StackPane stack = new StackPane(root);
         StlMeshImporter stlImporter = new StlMeshImporter();
         try {
             URL modelUrl = this.getClass().getResource("resistor.stl");
@@ -121,11 +127,39 @@ public class CircuitLab extends Application {
         Group tmpGroup = new Group();
         tmpGroup.getChildren().addAll(resistor);
         tmpGroup.setVisible(true);
-        world.getChildren().addAll(tmpGroup);
         
-        Scene scene = new Scene(stack, 1024, 768, true);
+        
+        world.getChildren().addAll(tmpGroup);
+        final Accordion accordion = new Accordion();
+        for(int i = 0; i < 3; i++) { //replace hard code loop limit
+            tps[i] = new TitledPane("",null);
+        }
+        accordion.getPanes().addAll(tps);
+        //Scene scene = new Scene(stack, 1024, 768, true);
         //stack.getChildren().add(root);
         //scene.getStylesheets().addAll(this.getClass().getResource("style.css").toExternalForm());
+        
+        SubScene subScene = new SubScene(root,500,500,true, SceneAntialiasing.BALANCED);
+        subScene.setCamera(camera);
+        
+        BorderPane pane = new BorderPane();
+        pane.setCenter(subScene);
+        Button button = new Button("Reset");
+        button.setOnAction(e->{
+            //rotateX.setAngle(-20);
+            //rotateY.setAngle(-20);
+        });
+        CheckBox checkBox = new CheckBox("Line");
+        checkBox.setOnAction(e->{
+           //box.setDrawMode(checkBox.isSelected()?DrawMode.LINE:DrawMode.FILL);
+        });
+        ToolBar toolBar = new ToolBar(button, checkBox);
+        toolBar.setOrientation(Orientation.VERTICAL); 
+        pane.setLeft(toolBar);
+        pane.setRight(accordion);
+        pane.setPrefSize(300,300);
+                
+        Scene scene = new Scene(pane);        
         
         handleKeyboard(scene, world);
         handleMouse(scene, world);
@@ -133,7 +167,10 @@ public class CircuitLab extends Application {
         primaryStage.setTitle("Circuit Lab");
         primaryStage.setScene(scene);
         primaryStage.show();
-        scene.setCamera(camera);
+        //scene.setCamera(camera);
+        
+    }
+    private void buildToolbar() {
         
     }
     
