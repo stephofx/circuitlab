@@ -57,6 +57,9 @@ import javafx.scene.shape.*;
 import javafx.scene.transform.Rotate;
 import javafx.scene.control.*;
 import javafx.geometry.*;
+import javafx.scene.image.ImageView;
+import java.io.IOException;
+import javafx.beans.value.*;
 
 /**
  *
@@ -66,8 +69,9 @@ public class CircuitLab extends Application {
     
     final Group root = new Group();
     
-    //final String[] imageNames = {"resistor.stl", "capacitor.stl", ""};
-    final TitledPane[] tps = new TitledPane[3];
+    final String[] imageNames = {"wire_singlepic.PNG", "wire_fourwaypic.PNG", "wire_rightjunctionpic.PNG", "batterypic.PNG", "ledpic.PNG","capacitorpic.PNG", "resistorpic.PNG", "transformerpic.PNG"};
+    final String[] categories = {"Single Wire", "Four-way Wire", "Right Junction Wire", "Battery", "LED", "Capacitor", "Resistor", "Transformer"};
+    final TitledPane[] tps = new TitledPane[imageNames.length];
     
     private static final double CONTROL_MULTIPLIER = 0.1;    
     private static final double SHIFT_MULTIPLIER = 10.0;    
@@ -131,15 +135,39 @@ public class CircuitLab extends Application {
         
         world.getChildren().addAll(tmpGroup);
         final Accordion accordion = new Accordion();
-        for(int i = 0; i < 3; i++) { //replace hard code loop limit
-            tps[i] = new TitledPane("",null);
+        
+        try {
+            for (int i = 0; i < imageNames.length; i++) { //replace hard code loop limit
+                ImageView img = new ImageView(new Image(getClass().getResourceAsStream(imageNames[i])));
+                img.setPreserveRatio(true);
+                img.setFitWidth(200);
+                tps[i] = new TitledPane(categories[i],img);
+            }
+        } catch (Exception e) {
+            for (int i = 0; i < 3; i++) { //replace hard code loop limit
+               e.printStackTrace();
+                tps[i] = new TitledPane("",null);
+            }
         }
+        
+        
+        
         accordion.getPanes().addAll(tps);
+        accordion.expandedPaneProperty().addListener(new 
+            ChangeListener<TitledPane>() {
+                public void changed(ObservableValue<? extends TitledPane> ov,
+                    TitledPane old_val, TitledPane new_val) {
+                        if (new_val != null) {
+                            System.out.println(accordion.getExpandedPane().getText());
+                        }
+              }
+        });
+        //accordion.setExpandedPane(tps[0]);
         //Scene scene = new Scene(stack, 1024, 768, true);
         //stack.getChildren().add(root);
         //scene.getStylesheets().addAll(this.getClass().getResource("style.css").toExternalForm());
         
-        SubScene subScene = new SubScene(root,500,500,true, SceneAntialiasing.BALANCED);
+        SubScene subScene = new SubScene(root,600,600,true, SceneAntialiasing.BALANCED);
         subScene.setCamera(camera);
         
         BorderPane pane = new BorderPane();
@@ -155,8 +183,9 @@ public class CircuitLab extends Application {
         });
         ToolBar toolBar = new ToolBar(button, checkBox);
         toolBar.setOrientation(Orientation.VERTICAL); 
-        pane.setLeft(toolBar);
-        pane.setRight(accordion);
+       
+        pane.setRight(toolBar);
+        pane.setLeft(accordion);
         pane.setPrefSize(300,300);
                 
         Scene scene = new Scene(pane);        
