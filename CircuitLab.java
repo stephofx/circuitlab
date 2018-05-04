@@ -59,7 +59,11 @@ import javafx.scene.control.*;
 import javafx.geometry.*;
 import javafx.scene.image.ImageView;
 import java.io.IOException;
+import javafx.animation.Interpolator;
+import javafx.animation.RotateTransition;
 import javafx.beans.value.*;
+import javafx.scene.input.KeyCode;
+import javafx.util.Duration;
 
 /**
  *
@@ -172,10 +176,16 @@ public class CircuitLab extends Application {
         
         BorderPane pane = new BorderPane();
         pane.setCenter(subScene);
-        Button button = new Button("Reset");
+        Button button = new Button("Place");
         button.setOnAction(e->{
-            //rotateX.setAngle(-20);
-            //rotateY.setAngle(-20);
+            //boxGroup.setRotationAxis(Rotate.Y_AXIS);
+            //cameraXform.reset();
+            RotateTransition rt = rotateAroundYAxis(boxGroup);
+            rt.play();
+            //boxGroup.rx.setAngle(90);
+            //cameraXform.reset();
+            //cameraXform.resetTSP();
+            
         });
         CheckBox checkBox = new CheckBox("Line");
         checkBox.setOnAction(e->{
@@ -198,6 +208,16 @@ public class CircuitLab extends Application {
         primaryStage.show();
         //scene.setCamera(camera);
         
+    }
+    private RotateTransition rotateAroundYAxis(Node node) {
+        RotateTransition rotate = new RotateTransition(Duration.seconds(3), node);
+        rotate.setAxis(Rotate.Y_AXIS);
+        rotate.setFromAngle(180);
+        rotate.setToAngle(0);
+        rotate.setInterpolator(Interpolator.LINEAR);
+        //rotate.setCycleCount(RotateTransition.INDEFINITE);
+
+        return rotate;
     }
     private void buildToolbar() {
         
@@ -227,8 +247,6 @@ public class CircuitLab extends Application {
         //final String MAP = "grid.png";
         final PhongMaterial grid = new PhongMaterial();
         grid.setDiffuseMap(new Image(MAP, 1920/2d, 1080/2d, true, true));
-
-        Xform boxXform = new Xform();
 
         final Box box = new Box(BOX_LENGTH, BOX_LENGTH, BOX_LENGTH);
         box.setMaterial(grid);
