@@ -72,7 +72,7 @@ import javafx.util.Duration;
 public class CircuitLab extends Application {
     
     final Group root = new Group();
-    
+    //Names of pictures and category names for titled pane accordion
     final String[] imageNames = {"wire_singlepic.PNG", "wire_fourwaypic.PNG", "wire_rightjunctionpic.PNG", "batterypic.PNG", "ledpic.PNG","capacitorpic.PNG", "resistorpic.PNG", "transformerpic.PNG"};
     final String[] categories = {"Single Wire", "Four-way Wire", "Right Junction Wire", "Battery", "LED", "Capacitor", "Resistor", "Transformer"};
     final TitledPane[] tps = new TitledPane[imageNames.length];
@@ -101,6 +101,7 @@ public class CircuitLab extends Application {
     private static final double CAMERA_NEAR_CLIP = 0.1;
     private static final double CAMERA_FAR_CLIP = 10000.0;
     private static final double BOX_LENGTH = 150.0;
+    private static int rotationCount = 0;
     
     @Override
     public void start(Stage primaryStage) {    
@@ -132,12 +133,9 @@ public class CircuitLab extends Application {
         resistor.setRotate(90.0);
         //Xform resistorXform = new Xform();
         //resistorXform.setRotate(0,90,0);
-        Group tmpGroup = new Group();
-        tmpGroup.getChildren().addAll(resistor);
-        tmpGroup.setVisible(true);
+
+        boxGroup.getChildren().addAll(resistor); //added resistor to boxGroup...
         
-        
-        world.getChildren().addAll(tmpGroup);
         final Accordion accordion = new Accordion();
         
         try {
@@ -176,15 +174,16 @@ public class CircuitLab extends Application {
         
         BorderPane pane = new BorderPane();
         pane.setCenter(subScene);
+
         Button button = new Button("Place");
         button.setOnAction(e->{
-            //boxGroup.setRotationAxis(Rotate.Y_AXIS);
-            //cameraXform.reset();
-            RotateTransition rt = rotateAroundYAxis(boxGroup);
-            rt.play();
-            //boxGroup.rx.setAngle(90);
-            //cameraXform.reset();
-            //cameraXform.resetTSP();
+            if(cameraXform.rx.getAngle() != 0 && rotationCount == 0) {
+                cameraXform.reset();
+            } else {
+                //RotateTransition rt = rotateReset(cameraXform);
+                //rt.play();
+                rotateCamera();
+            }
             
         });
         CheckBox checkBox = new CheckBox("Line");
@@ -209,14 +208,35 @@ public class CircuitLab extends Application {
         //scene.setCamera(camera);
         
     }
-    private RotateTransition rotateAroundYAxis(Node node) {
+    
+    private void rotateCamera() {
+        if(rotationCount < 3) cameraXform.ry.setAngle(cameraXform.ry.getAngle()+90);
+        else if(rotationCount == 4) cameraXform.rx.setAngle(cameraXform.rx.getAngle()+90);
+        else cameraXform.rx.setAngle(cameraXform.rx.getAngle()+180);
+        if(rotationCount == 5) rotationCount = 0;
+        
+    }
+    
+    private RotateTransition rotateReset(Node node) {
         RotateTransition rotate = new RotateTransition(Duration.seconds(3), node);
-        rotate.setAxis(Rotate.Y_AXIS);
-        rotate.setFromAngle(180);
-        rotate.setToAngle(0);
+        cameraXform.debug();
+        if(rotationCount < 3) {
+            rotate.setAxis(Rotate.Y_AXIS);
+            rotate.setFromAngle(0);
+            rotate.setToAngle(90);
+        } else if(rotationCount == 3) {
+            rotate.setAxis(Rotate.X_AXIS);
+            rotate.setFromAngle(0);
+            rotate.setToAngle(90);
+        } else {
+            rotate.setAxis(Rotate.X_AXIS);
+            rotate.setFromAngle(0);
+            rotate.setToAngle(180);
+        }
         rotate.setInterpolator(Interpolator.LINEAR);
         //rotate.setCycleCount(RotateTransition.INDEFINITE);
-
+        rotationCount++;
+        if(rotationCount == 5) rotationCount = 0;
         return rotate;
     }
     private void buildToolbar() {
