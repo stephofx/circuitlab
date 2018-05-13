@@ -63,6 +63,10 @@ import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
 import javafx.beans.value.*;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.PickResult;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 /**
@@ -76,6 +80,7 @@ public class CircuitLab extends Application {
     final String[] imageNames = {"wire_singlepic.PNG", "wire_fourwaypic.PNG", "wire_rightjunctionpic.PNG", "batterypic.PNG", "ledpic.PNG","capacitorpic.PNG", "resistorpic.PNG", "transformerpic.PNG"};
     final String[] categories = {"Single Wire", "Four-way Wire", "Right Junction Wire", "Battery", "LED", "Capacitor", "Resistor", "Transformer"};
     final TitledPane[] tps = new TitledPane[imageNames.length];
+    static StlMeshImporter stlImporter = new StlMeshImporter();
     
     private static final double CONTROL_MULTIPLIER = 0.1;    
     private static final double SHIFT_MULTIPLIER = 10.0;    
@@ -89,19 +94,21 @@ public class CircuitLab extends Application {
     double mouseOldY;
     double mouseDeltaX;
     double mouseDeltaY;
-    final Xform world = new Xform();
-    final Xform boxGroup = new Xform();
+    final Xform world = new Xform(); //global node
+    final static Xform boxGroup = new Xform(); //node of cube
     final PerspectiveCamera camera = new PerspectiveCamera(true);
     final Xform cameraXform = new Xform();
     final Xform cameraXform2 = new Xform();
     final Xform cameraXform3 = new Xform();
     private static final double CAMERA_INITIAL_DISTANCE = -450;
-    private static final double CAMERA_INITIAL_X_ANGLE = 70.0;
-    private static final double CAMERA_INITIAL_Y_ANGLE = 320.0;
+    private static final double CAMERA_INITIAL_X_ANGLE = 0;
+    private static final double CAMERA_INITIAL_Y_ANGLE = 0;
     private static final double CAMERA_NEAR_CLIP = 0.1;
     private static final double CAMERA_FAR_CLIP = 10000.0;
     private static final double BOX_LENGTH = 150.0;
     private static int rotationCount = 0;
+    final Accordion accordion = new Accordion(); //handles side accordion for circuit parts
+    private static String selectedObj; 
     
     @Override
     public void start(Stage primaryStage) {    
@@ -116,7 +123,7 @@ public class CircuitLab extends Application {
         stack.setBackground(new Background(myBI));*/
         
         //StackPane stack = new StackPane(root);
-        StlMeshImporter stlImporter = new StlMeshImporter();
+        
         try {
             URL modelUrl = this.getClass().getResource("resistor.stl");
             stlImporter.read(modelUrl);            
@@ -131,58 +138,38 @@ public class CircuitLab extends Application {
         resistor.setTranslateZ(60+5);
         resistor.setRotationAxis(Rotate.X_AXIS);
         resistor.setRotate(90.0);
+        boxGroup.getChildren().addAll(resistor);
         //Xform resistorXform = new Xform();
-        //resistorXform.setRotate(0,90,0);
-
-        boxGroup.getChildren().addAll(resistor); //added resistor to boxGroup...
-        
-        final Accordion accordion = new Accordion();
-        
-        try {
-            for (int i = 0; i < imageNames.length; i++) { //replace hard code loop limit
-                ImageView img = new ImageView(new Image(getClass().getResourceAsStream(imageNames[i])));
-                img.setPreserveRatio(true);
-                img.setFitWidth(200);
-                tps[i] = new TitledPane(categories[i],img);
-            }
-        } catch (Exception e) {
-            for (int i = 0; i < 3; i++) { //replace hard code loop limit
-               e.printStackTrace();
-                tps[i] = new TitledPane("",null);
-            }
-        }
+        //resistorXform.getChildren().addAll(resistor); 
+        //resistorXform.setVisible(true);
+        //world.getChildren().addAll(resistorXform);
         
         
-        
-        accordion.getPanes().addAll(tps);
-        accordion.expandedPaneProperty().addListener(new 
-            ChangeListener<TitledPane>() {
-                public void changed(ObservableValue<? extends TitledPane> ov,
-                    TitledPane old_val, TitledPane new_val) {
-                        if (new_val != null) {
-                            System.out.println(accordion.getExpandedPane().getText());
-                        }
-              }
-        });
+        buildAccordion();
         //accordion.setExpandedPane(tps[0]);
         //Scene scene = new Scene(stack, 1024, 768, true);
         //stack.getChildren().add(root);
         //scene.getStylesheets().addAll(this.getClass().getResource("style.css").toExternalForm());
+        Group topPane = new Group();
+        Node resultPanel = createOverlay();
+        topPane.getChildren().add(resultPanel);
+        SubScene resultScene = new SubScene(topPane,800,75);
         
+        /*Subscene separates 3D nodes from 2D UI Controls */
         SubScene subScene = new SubScene(root,600,600,true, SceneAntialiasing.BALANCED);
         subScene.setCamera(camera);
         
         BorderPane pane = new BorderPane();
         pane.setCenter(subScene);
-
-        Button button = new Button("Place");
+        pane.setTop(resultScene);
+        Button button = new Button("Orient");
         button.setOnAction(e->{
             if(cameraXform.rx.getAngle() != 0 && rotationCount == 0) {
                 cameraXform.reset();
             } else {
-                //RotateTransition rt = rotateReset(cameraXform);
-                //rt.play();
                 rotateCamera();
+                //RotateTransition rt = rotateReset(boxGroup);
+                //rt.play();
             }
             
         });
@@ -205,21 +192,26 @@ public class CircuitLab extends Application {
         primaryStage.setTitle("Circuit Lab");
         primaryStage.setScene(scene);
         primaryStage.show();
+        
+        primaryStage.requestFocus();
         //scene.setCamera(camera);
         
     }
-    
+    /*Two methods to rotate the cube in set orientation so that parts can be placed on the cube.
+        This rotates the cameraXform.*/
     private void rotateCamera() {
         if(rotationCount < 3) cameraXform.ry.setAngle(cameraXform.ry.getAngle()+90);
-        else if(rotationCount == 4) cameraXform.rx.setAngle(cameraXform.rx.getAngle()+90);
-        else cameraXform.rx.setAngle(cameraXform.rx.getAngle()+180);
+        else if(rotationCount == 3) cameraXform.rx.setAngle(cameraXform.rx.getAngle()+90);
+        else if(rotationCount == 4) cameraXform.rx.setAngle(cameraXform.rx.getAngle()+180);
         if(rotationCount == 5) rotationCount = 0;
+        rotationCount++;
         
     }
     
+    /*Rotates the cube to all six sides with set orientation so that circuit parts can be placed,
+       with animation. This method turns the boxGroup Xform rather than the cameraXform. */
     private RotateTransition rotateReset(Node node) {
         RotateTransition rotate = new RotateTransition(Duration.seconds(3), node);
-        cameraXform.debug();
         if(rotationCount < 3) {
             rotate.setAxis(Rotate.Y_AXIS);
             rotate.setFromAngle(0);
@@ -239,9 +231,39 @@ public class CircuitLab extends Application {
         if(rotationCount == 5) rotationCount = 0;
         return rotate;
     }
-    private void buildToolbar() {
-        
+    
+    /*Builds the accordion UI object storing the titlepanes of circuit parts. It
+    looks for the opening of a titled pane in order to know it has been selected */
+    private void buildAccordion() {
+        try {
+            for (int i = 0; i < imageNames.length; i++) { //replace hard code loop limit
+                ImageView img = new ImageView(new Image(getClass().getResourceAsStream(imageNames[i])));
+                img.setPreserveRatio(true);
+                img.setFitWidth(200);
+                tps[i] = new TitledPane(categories[i],img);
+            }
+        } catch (Exception e) {
+            for (int i = 0; i < 3; i++) { //replace hard code loop limit
+               e.printStackTrace();
+                tps[i] = new TitledPane("",null);
+            }
+        }
+        accordion.getPanes().addAll(tps);
+        accordion.expandedPaneProperty().addListener(new 
+            ChangeListener<TitledPane>() {
+                public void changed(ObservableValue<? extends TitledPane> ov,
+                    TitledPane old_val, TitledPane new_val) {
+                        if (new_val != null) {
+                            selectedObj = accordion.getExpandedPane().getText();
+                            System.out.println(selectedObj);
+                        } else {
+                            selectedObj = null;
+                            System.out.println("closed");
+                        }
+              }
+        });
     }
+    
     
     private void buildScene() {
         System.out.println("buildScene");
@@ -270,12 +292,124 @@ public class CircuitLab extends Application {
 
         final Box box = new Box(BOX_LENGTH, BOX_LENGTH, BOX_LENGTH);
         box.setMaterial(grid);
+        boxListener(box); 
         boxGroup.getChildren().add(box);
         boxGroup.setVisible(true);
         world.getChildren().addAll(boxGroup);
         
     }
     
+    /*Creates a overlay for mouse information*/
+    Text data, caption;
+    private Node createOverlay() {
+        HBox hBox = new HBox(10);
+
+        caption = new Text("Node:\nPoint:\nTexture Coord:\nFace:\nDistance:");
+        caption.setFont(Font.font("Times New Roman", 10));
+        caption.setTextOrigin(VPos.TOP);
+        caption.setTextAlignment(TextAlignment.RIGHT);
+
+        data = new Text("-- None --\n\n\n\n");
+        data.setFont(Font.font("Times New Roman", 10));
+        data.setTextOrigin(VPos.TOP);
+        data.setTextAlignment(TextAlignment.LEFT);
+
+        Rectangle rect = new Rectangle(100, 50, null);
+        hBox.getChildren().addAll(caption, data);
+        return new Group(rect, hBox);
+    }
+    
+    /*listens for the mouse when it enters the box and exits the box. */
+    private void boxListener(Box shape) {
+        EventHandler<MouseEvent> moveHandler = (MouseEvent event) -> {
+            PickResult res = event.getPickResult();
+            setState(res);
+            event.consume();
+        };
+
+        shape.setOnMouseMoved(moveHandler);
+        shape.setOnMouseDragOver(moveHandler);
+
+        shape.setOnMouseEntered((MouseEvent event) -> {
+            PickResult res = event.getPickResult();
+            if (res == null) {
+                System.err.println("Mouse entered has not pickResult");
+            }
+            setState(res);
+        });
+
+        shape.setOnMouseExited((MouseEvent event) -> {
+            PickResult res = event.getPickResult();
+            if (res == null) {
+                System.err.println("Mouse exited has not pickResult");
+            }
+            setState(res);
+            event.consume();
+        });
+        
+        shape.setOnMouseClicked((MouseEvent event) -> {
+            PickResult res = event.getPickResult();
+            if (res == null) {
+                System.err.println("Mouse clicked has no pickResult");
+            }
+            placeItemOnClick(res);
+            event.consume();
+        });
+    }
+    /*Sets the data for the overlay mouse information */
+    final void setState(PickResult result) {
+        if (result.getIntersectedNode() == null) {
+            data.setText("Scene\n\n"
+                    + point3DToString(result.getIntersectedPoint()) + "\n"
+                    + point2DToString(result.getIntersectedTexCoord()) + "\n"
+                    + result.getIntersectedFace() + "\n"
+                    + String.format("%.1f", result.getIntersectedDistance()));
+        } else {
+            data.setText(result.getIntersectedNode().getId() + "\n"
+                    + point3DToString(result.getIntersectedPoint()) + "\n"
+                    + point2DToString(result.getIntersectedTexCoord()) + "\n"
+                    + result.getIntersectedFace() + "\n"
+                    + String.format("%.1f", result.getIntersectedDistance()));
+        }
+    }
+    
+    private static String point3DToString(Point3D pt) {
+        if (pt == null) {
+            return "null";
+        }
+        return String.format("%.1f; %.1f; %.1f", pt.getX(), pt.getY(), pt.getZ());
+    }
+
+    private static String point2DToString(Point2D pt) {
+        if (pt == null) {
+            return "null";
+        }
+        return String.format("%.2f; %.2f", pt.getX(), pt.getY());
+    }
+    
+    private static void placeItemOnClick(PickResult res) {
+        if(selectedObj == null) System.out.println("No object selected");
+        else {
+            try {
+                URL modelUrl = CircuitLab.class.getResource(selectedObj.toLowerCase() + ".stl");
+                stlImporter.read(modelUrl);            
+            }
+            catch (Exception e) {
+                // handle exception
+            }
+            TriangleMesh stlMesh = stlImporter.getImport();
+            MeshView placedObj= new MeshView(stlMesh);
+            placedObj.setTranslateX(res.getIntersectedPoint().getX()); //border length approx 5
+            placedObj.setTranslateY(res.getIntersectedPoint().getY());
+            placedObj.setTranslateZ(res.getIntersectedPoint().getZ());
+            placedObj.setRotationAxis(Rotate.X_AXIS);
+            placedObj.setRotate(90.0);
+            boxGroup.getChildren().addAll(placedObj);
+        }
+        
+    }
+    
+    /*Handles the mouse when rotating the box. */
     private void handleMouse(Scene scene, final Node root) {
  
         scene.setOnMousePressed(new EventHandler<MouseEvent>() {
