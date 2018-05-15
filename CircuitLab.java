@@ -122,28 +122,7 @@ public class CircuitLab extends Application {
         //stack.setId("pane");
         stack.setBackground(new Background(myBI));*/
         
-        //StackPane stack = new StackPane(root);
-        
-        try {
-            URL modelUrl = this.getClass().getResource("resistor.stl");
-            stlImporter.read(modelUrl);            
-        }
-        catch (Exception e) {
-            // handle exception
-        }
-        TriangleMesh stlMesh = stlImporter.getImport();
-        MeshView resistor = new MeshView(stlMesh);
-        resistor.setTranslateX(58); //border length approx 5
-        resistor.setTranslateY(65);
-        resistor.setTranslateZ(60+5);
-        resistor.setRotationAxis(Rotate.X_AXIS);
-        resistor.setRotate(90.0);
-        boxGroup.getChildren().addAll(resistor);
-        //Xform resistorXform = new Xform();
-        //resistorXform.getChildren().addAll(resistor); 
-        //resistorXform.setVisible(true);
-        //world.getChildren().addAll(resistorXform);
-        
+        //StackPane stack = new StackPane(root);         
         
         buildAccordion();
         //accordion.setExpandedPane(tps[0]);
@@ -256,6 +235,12 @@ public class CircuitLab extends Application {
                         if (new_val != null) {
                             selectedObj = accordion.getExpandedPane().getText();
                             System.out.println(selectedObj);
+                            if(selectedObj.contains("Wire")) {
+                                selectedObj = "wire_";
+                                if(selectedObj.contains("Four Way")) selectedObj += "fourway";
+                                else if(selectedObj.contains("Right Junction")) selectedObj += "rightjunction";
+                                else selectedObj += "single";
+                            }
                         } else {
                             selectedObj = null;
                             System.out.println("closed");
@@ -387,6 +372,7 @@ public class CircuitLab extends Application {
         return String.format("%.2f; %.2f", pt.getX(), pt.getY());
     }
     
+    /*Places a selected circuit part when clicking on the cube. */
     private static void placeItemOnClick(PickResult res) {
         if(selectedObj == null) System.out.println("No object selected");
         else {
@@ -402,8 +388,22 @@ public class CircuitLab extends Application {
             placedObj.setTranslateX(res.getIntersectedPoint().getX()); //border length approx 5
             placedObj.setTranslateY(res.getIntersectedPoint().getY());
             placedObj.setTranslateZ(res.getIntersectedPoint().getZ());
-            placedObj.setRotationAxis(Rotate.X_AXIS);
-            placedObj.setRotate(90.0);
+            if(res.getIntersectedPoint().getY() == 75.0) {
+                placedObj.setRotationAxis(Rotate.X_AXIS);
+                placedObj.setRotate(90.0);
+            } else if(res.getIntersectedPoint().getY() == -75.0) {
+                placedObj.setRotationAxis(Rotate.X_AXIS);
+                placedObj.setRotate(270.0);
+            } else if(res.getIntersectedPoint().getX() == 75.0) {
+                placedObj.setRotationAxis(Rotate.Y_AXIS);
+                placedObj.setRotate(270.0);
+            } else if(res.getIntersectedPoint().getX() == -75.0) {
+                placedObj.setRotationAxis(Rotate.Y_AXIS);
+                placedObj.setRotate(90.0);
+            } else if(res.getIntersectedPoint().getZ() == 75.0) {
+                placedObj.setRotationAxis(Rotate.Y_AXIS);
+                placedObj.setRotate(180.0);
+            }
             boxGroup.getChildren().addAll(placedObj);
         }
         
