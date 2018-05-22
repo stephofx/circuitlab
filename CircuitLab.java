@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package circuitlab;
 
 /*
@@ -69,10 +64,6 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
-/**
- *
- * 
- */
 public class CircuitLab extends Application {
     
     final Group root = new Group();
@@ -388,21 +379,24 @@ public class CircuitLab extends Application {
             placedObj.setTranslateX(res.getIntersectedPoint().getX()); //border length approx 5
             placedObj.setTranslateY(res.getIntersectedPoint().getY());
             placedObj.setTranslateZ(res.getIntersectedPoint().getZ());
-            if(res.getIntersectedPoint().getY() == 75.0) {
+            if((int) res.getIntersectedPoint().getY() == 75) {
                 placedObj.setRotationAxis(Rotate.X_AXIS);
                 placedObj.setRotate(90.0);
-            } else if(res.getIntersectedPoint().getY() == -75.0) {
+                placedObj.setTranslateY(res.getIntersectedPoint().getY()+3.3*2);
+            } else if((int)res.getIntersectedPoint().getY() == -75) {
                 placedObj.setRotationAxis(Rotate.X_AXIS);
                 placedObj.setRotate(270.0);
-            } else if(res.getIntersectedPoint().getX() == 75.0) {
+            } else if((int)res.getIntersectedPoint().getX() == 75) {
                 placedObj.setRotationAxis(Rotate.Y_AXIS);
                 placedObj.setRotate(270.0);
-            } else if(res.getIntersectedPoint().getX() == -75.0) {
+            } else if((int)res.getIntersectedPoint().getX() == -75) {
                 placedObj.setRotationAxis(Rotate.Y_AXIS);
                 placedObj.setRotate(90.0);
-            } else if(res.getIntersectedPoint().getZ() == 75.0) {
+                placedObj.setTranslateX(res.getIntersectedPoint().getX()-3.3*2);
+            } else if((int)res.getIntersectedPoint().getZ() == 75) {
                 placedObj.setRotationAxis(Rotate.Y_AXIS);
                 placedObj.setRotate(180.0);
+                placedObj.setTranslateZ(res.getIntersectedPoint().getZ()+10);
             }
             boxGroup.getChildren().addAll(placedObj);
         }
