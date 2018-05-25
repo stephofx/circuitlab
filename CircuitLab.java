@@ -101,6 +101,9 @@ public class CircuitLab extends Application {
     final Accordion accordion = new Accordion(); //handles side accordion for circuit parts
     private static String selectedObj; 
     
+    static int facenum;
+    static CircuitMatrix cm;
+    
     @Override
     public void start(Stage primaryStage) {    
         buildScene();
@@ -150,6 +153,9 @@ public class CircuitLab extends Application {
         ToolBar toolBar = new ToolBar(button, checkBox);
         toolBar.setOrientation(Orientation.VERTICAL); 
        
+        cm = new CircuitMatrix();
+        
+        
         pane.setRight(toolBar);
         pane.setLeft(accordion);
         pane.setPrefSize(300,300);
@@ -226,10 +232,11 @@ public class CircuitLab extends Application {
                         if (new_val != null) {
                             selectedObj = accordion.getExpandedPane().getText();
                             System.out.println(selectedObj);
-                            if(selectedObj.contains("Wire")) {
+                            String tmp = selectedObj;
+                            if(tmp.contains("Wire")) {
                                 selectedObj = "wire_";
-                                if(selectedObj.contains("Four Way")) selectedObj += "fourway";
-                                else if(selectedObj.contains("Right Junction")) selectedObj += "rightjunction";
+                                if(tmp.contains("Four-way")) selectedObj += "fourway";
+                                else if(tmp.contains("Right Junction")) selectedObj += "rightjunction";
                                 else selectedObj += "single";
                             }
                         } else {
@@ -292,7 +299,7 @@ public class CircuitLab extends Application {
 
         Rectangle rect = new Rectangle(100, 50, null);
         hBox.getChildren().addAll(caption, data);
-        return new Group(rect, hBox);
+        return new Group(rect, hBox);   
     }
     
     /*listens for the mouse when it enters the box and exits the box. */
@@ -334,6 +341,7 @@ public class CircuitLab extends Application {
     }
     /*Sets the data for the overlay mouse information */
     final void setState(PickResult result) {
+            
         if (result.getIntersectedNode() == null) {
             data.setText("Scene\n\n"
                     + point3DToString(result.getIntersectedPoint()) + "\n"
@@ -364,6 +372,8 @@ public class CircuitLab extends Application {
     }
     
     /*Places a selected circuit part when clicking on the cube. */
+    static MeshView prevMV;
+    static String prevObjText;
     private static void placeItemOnClick(PickResult res) {
         if(selectedObj == null) System.out.println("No object selected");
         else {
@@ -374,6 +384,7 @@ public class CircuitLab extends Application {
             catch (Exception e) {
                 // handle exception
             }
+            
             TriangleMesh stlMesh = stlImporter.getImport();
             MeshView placedObj= new MeshView(stlMesh);
             placedObj.setTranslateX(res.getIntersectedPoint().getX()); //border length approx 5
@@ -382,23 +393,43 @@ public class CircuitLab extends Application {
             if((int) res.getIntersectedPoint().getY() == 75) {
                 placedObj.setRotationAxis(Rotate.X_AXIS);
                 placedObj.setRotate(90.0);
-                placedObj.setTranslateY(res.getIntersectedPoint().getY()+3.3*2);
+                placedObj.setTranslateY(res.getIntersectedPoint().getY()+3.3*2);                                          //KEY FOR FACENUMS IN CIRCUITMATRIX CLASS
+                facenum = 5; 
             } else if((int)res.getIntersectedPoint().getY() == -75) {
                 placedObj.setRotationAxis(Rotate.X_AXIS);
                 placedObj.setRotate(270.0);
+                facenum=6;
             } else if((int)res.getIntersectedPoint().getX() == 75) {
                 placedObj.setRotationAxis(Rotate.Y_AXIS);
                 placedObj.setRotate(270.0);
+                facenum=4;
             } else if((int)res.getIntersectedPoint().getX() == -75) {
                 placedObj.setRotationAxis(Rotate.Y_AXIS);
                 placedObj.setRotate(90.0);
                 placedObj.setTranslateX(res.getIntersectedPoint().getX()-3.3*2);
+                facenum=2;
             } else if((int)res.getIntersectedPoint().getZ() == 75) {
                 placedObj.setRotationAxis(Rotate.Y_AXIS);
                 placedObj.setRotate(180.0);
                 placedObj.setTranslateZ(res.getIntersectedPoint().getZ()+10);
+                facenum = 3;
+            } else {
+                facenum = 1;
             }
-            boxGroup.getChildren().addAll(placedObj);
+            MatrixArray ma = cm.getMArr(facenum);
+            MatrixObject mo = (MatrixObject) ma.fetchCell(facenum, new fxpoint(res.getIntersectedPoint().getX(),res.getIntersectedPoint().getY(),res.getIntersectedPoint().getZ())).get(0);
+            int row = (int) ma.fetchCell(facenum, new fxpoint(res.getIntersectedPoint().getX(),res.getIntersectedPoint().getY(),res.getIntersectedPoint().getZ())).get(1);
+            int col = (int) ma.fetchCell(facenum, new fxpoint(res.getIntersectedPoint().getX(),res.getIntersectedPoint().getY(),res.getIntersectedPoint().getZ())).get(2);
+            if (mo.filled == false) {
+                boxGroup.getChildren().addAll(placedObj);
+                ma.mArr[row][col].changeObj(placedObj, selectedObj.toLowerCase());
+            } else {
+                MeshView prevMV = ma.mArr[row][col].mv;
+                boxGroup.getChildren().remove(prevMV);
+                boxGroup.getChildren().addAll(placedObj);
+                ma.mArr[row][col].changeObj(placedObj, selectedObj.toLowerCase());
+                //ma.mArr[row][col].changeObj(stlMesh, selectedObj.toLowerCase());
+            }
         }
         
     }
