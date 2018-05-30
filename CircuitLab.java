@@ -45,6 +45,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import com.interactivemesh.jfx.importer.stl.StlMeshImporter;
+import java.awt.Desktop;
+import java.io.File;
 import java.net.URL;
 import javafx.scene.shape.TriangleMesh;
 import java.lang.Exception;
@@ -54,6 +56,8 @@ import javafx.scene.control.*;
 import javafx.geometry.*;
 import javafx.scene.image.ImageView;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
 import javafx.beans.value.*;
@@ -103,6 +107,8 @@ public class CircuitLab extends Application {
     
     static int facenum;
     static CircuitMatrix cm;
+    static Player p1;
+    static Player p2;
     
     @Override
     public void start(Stage primaryStage) {    
@@ -132,6 +138,8 @@ public class CircuitLab extends Application {
         SubScene subScene = new SubScene(root,600,600,true, SceneAntialiasing.BALANCED);
         subScene.setCamera(camera);
         
+        /*Sets up the right border, which adds two buttons for orientation and 
+        opening rules. */
         BorderPane pane = new BorderPane();
         pane.setCenter(subScene);
         pane.setTop(resultScene);
@@ -146,15 +154,22 @@ public class CircuitLab extends Application {
             }
             
         });
-        CheckBox checkBox = new CheckBox("Line");
-        checkBox.setOnAction(e->{
-           //box.setDrawMode(checkBox.isSelected()?DrawMode.LINE:DrawMode.FILL);
+        Button instrct = new Button("Rules");
+        instrct.setOnAction(e->{
+            ProcessBuilder pb = new ProcessBuilder("Notepad.exe", "rules.txt");
+            try {
+                pb.start();
+            } catch (IOException ex) {
+                Logger.getLogger(CircuitLab.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
         });
-        ToolBar toolBar = new ToolBar(button, checkBox);
+        ToolBar toolBar = new ToolBar(button, instrct);
         toolBar.setOrientation(Orientation.VERTICAL); 
        
         cm = new CircuitMatrix();
-        
+        p1 = new Player(true, 1, 1000, 0);
+        p2 = new Player(false, 2, 1000, 0);
         
         pane.setRight(toolBar);
         pane.setLeft(accordion);

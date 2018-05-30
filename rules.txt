@@ -1,0 +1,45 @@
+﻿Circuit Lab Rules
+
+Overall Allowed Actions
+Turn-Based:
+-Each turn can be a “setting” or “running” move: the player can “set” a circuit part 
+on the grid or “run” their circuit to gain currency for a final variable time (5 seconds)
+This results in end of move and shifts the control to the next player.
+End game:
+-The game ends when all spots on the grid are filled.
+
+The Setup
+-The game is setup on a 3D cube in which the cube is partitioned into a 5 x 5 grid on each face. 
+Each grid square is open to be “set” by a circuit part except for the destination power device. 
+Normal grid square
+-This grid square does nothing except allow for circuit part to be placed.
+Currency grid square
+-This grid square measures the current of the circuit part on top of it in order to calculate currency, which is (current) multiplied by (time).
+Destination grid square
+-This grid square is the final voltage measurement of the circuit, determining which grid is winning or has won. 
+Source grid square
+-This grid square is the power source of the player; it is designated for one player only and is opposite the grid square of the destination grid square. The player must begin their circuit here. The game will assume DC power source.
+
+Circuit Parts
+-A variety of circuit parts are available for the player to utilize in game.
+Wire
+-This is the basis of the circuit; it connects different parts of the circuit together and ultimately forms the loop.
+Resistor
+-This increases the resistance of the circuit. This can lead to changes in voltage based on Ohm’s Law. 
+Generator
+-This creates a power source for a circuit not beginning at the source grid square.
+Capacitor
+-Cheap, short-term power boost
+Transformer
+-Expensive, can boost or lower voltage.
+Diode
+Diodes will control one directional flow.
+Switches (Relays, Hand-actuated)
+Switches can turn a circuit on or off by connecting/disconnecting it.
+
+Currency
+-Currency is defined by the current of the circuit at a currency grid square multiplied by the time given to run the circuit.
+
+-The time variable is constant and is always 5 seconds.
+
+-Currency is used to buy circuit parts, which are priced proportional to their usefulness in th game.

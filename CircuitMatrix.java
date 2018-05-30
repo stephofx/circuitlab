@@ -118,6 +118,8 @@ class MatrixObject {
     boolean filled;
     String objectText;
     MeshView mv;
+    int id; //determines which player the object belongs to.
+    
     public MatrixObject() {
       filled = false;
       objectText = "";
