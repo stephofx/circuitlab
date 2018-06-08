@@ -73,7 +73,7 @@ public class CircuitLab extends Application {
     final Group root = new Group();
     //Names of pictures and category names for titled pane accordion
     final String[] imageNames = {"wire_singlepic.PNG", "wire_fourwaypic.PNG", "wire_rightjunctionpic.PNG", "batterypic.PNG", "ledpic.PNG","capacitorpic.PNG", "resistorpic.PNG", "transformerpic.PNG"};
-    final String[] categories = {"Single Wire", "Four-way Wire", "Right Junction Wire", "Battery", "LED", "Capacitor", "Resistor", "Transformer"};
+    final String[] categories = {"Single Wire (100)", "Four-way Wire (300)", "Right Junction Wire (200)", "Battery (1000)", "LED (2500)", "Capacitor (500)", "Resistor (200)", "Transformer (5000)"};
     final TitledPane[] tps = new TitledPane[imageNames.length];
     static StlMeshImporter stlImporter = new StlMeshImporter();
     
@@ -82,6 +82,8 @@ public class CircuitLab extends Application {
     private static final double MOUSE_SPEED = 0.1;    
     private static final double ROTATION_SPEED = 1.0;    
     private static final double TRACK_SPEED = 0.3;
+    
+    static int turnCounter = 0;
         
     double mousePosX;
     double mousePosY;
@@ -109,6 +111,7 @@ public class CircuitLab extends Application {
     static CircuitMatrix cm;
     static Player p1;
     static Player p2;
+    static Player[] playerArray;
     
     @Override
     public void start(Stage primaryStage) {    
@@ -130,8 +133,9 @@ public class CircuitLab extends Application {
         //stack.getChildren().add(root);
         //scene.getStylesheets().addAll(this.getClass().getResource("style.css").toExternalForm());
         Group topPane = new Group();
-        Node resultPanel = createOverlay();
-        topPane.getChildren().add(resultPanel);
+        Node resultPanel = createLeftOverlay();
+        Node playerInfo = createMidOverlay();
+        topPane.getChildren().addAll(resultPanel, playerInfo);
         SubScene resultScene = new SubScene(topPane,800,75);
         
         /*Subscene separates 3D nodes from 2D UI Controls */
@@ -168,8 +172,11 @@ public class CircuitLab extends Application {
         toolBar.setOrientation(Orientation.VERTICAL); 
        
         cm = new CircuitMatrix();
-        p1 = new Player(true, 1, 1000, 0);
-        p2 = new Player(false, 2, 1000, 0);
+        p1 = new Player(true, 0, 1000, 0);
+        p2 = new Player(false, 1, 1000, 0);
+        playerArray = new Player[2];
+        playerArray[0] = p1;
+        playerArray[1] = p2;
         
         pane.setRight(toolBar);
         pane.setLeft(accordion);
@@ -246,7 +253,7 @@ public class CircuitLab extends Application {
                     TitledPane old_val, TitledPane new_val) {
                         if (new_val != null) {
                             selectedObj = accordion.getExpandedPane().getText();
-                            System.out.println(selectedObj);
+                            selectedObj = selectedObj.substring(0, selectedObj.indexOf(" ("));
                             String tmp = selectedObj;
                             if(tmp.contains("Wire")) {
                                 selectedObj = "wire_";
@@ -298,10 +305,9 @@ public class CircuitLab extends Application {
     }
     
     /*Creates a overlay for mouse information*/
-    Text data, caption;
-    private Node createOverlay() {
-        HBox hBox = new HBox(10);
-
+    Text data, caption, turn;
+    HBox hBox = new HBox(10);
+    private Node createLeftOverlay() {
         caption = new Text("Node:\nPoint:\nTexture Coord:\nFace:\nDistance:");
         caption.setFont(Font.font("Times New Roman", 10));
         caption.setTextOrigin(VPos.TOP);
@@ -315,6 +321,17 @@ public class CircuitLab extends Application {
         Rectangle rect = new Rectangle(100, 50, null);
         hBox.getChildren().addAll(caption, data);
         return new Group(rect, hBox);   
+    }
+    private Node createMidOverlay() {
+        turn = new Text("Turn: Player " + (turnCounter % 2 + 1) + "\nCurrency: \nVoltage: ");
+        turn.setFont(Font.font("Times New Roman", 13));
+        turn.setTextOrigin(VPos.TOP);
+        data.setTextAlignment(TextAlignment.CENTER);
+        Rectangle rect = new Rectangle(100, 50, null);
+        rect.setX(400);
+        hBox.getChildren().addAll(turn);
+        return new Group(rect, hBox); 
+        
     }
     
     /*listens for the mouse when it enters the box and exits the box. */
@@ -351,6 +368,7 @@ public class CircuitLab extends Application {
                 System.err.println("Mouse clicked has no pickResult");
             }
             placeItemOnClick(res);
+            setPlayerInfo();
             event.consume();
         });
     }
@@ -370,6 +388,11 @@ public class CircuitLab extends Application {
                     + result.getIntersectedFace() + "\n"
                     + String.format("%.1f", result.getIntersectedDistance()));
         }
+    }
+    
+    final void setPlayerInfo() {
+        turn.setText("Turn: Player " + (turnCounter % 2 + 1) + "\n" + "Currency: " + (playerArray[turnCounter%2].currency) + "\nVoltage: " + 
+                (playerArray[turnCounter%2].voltage));
     }
     
     private static String point3DToString(Point3D pt) {
@@ -402,6 +425,13 @@ public class CircuitLab extends Application {
             
             TriangleMesh stlMesh = stlImporter.getImport();
             MeshView placedObj= new MeshView(stlMesh);
+            
+            String MAP; 
+            MAP = (turnCounter%2==0) ? "http://cdn7.bigcommerce.com/s-hfhomm5/images/stencil/1280x1280/products/180/451/Solid_Red_Sized__25214.1507754519.jpg?c=2&imbypass=on" : 
+                    "http://www.solidbackgrounds.com/images/2560x1440/2560x1440-brandeis-blue-solid-color-background.jpg";
+            final PhongMaterial grid = new PhongMaterial();
+            grid.setDiffuseMap(new Image(MAP, 1920/2d, 1080/2d, true, true));
+            placedObj.setMaterial(grid);
             placedObj.setTranslateX(res.getIntersectedPoint().getX()); //border length approx 5
             placedObj.setTranslateY(res.getIntersectedPoint().getY());
             placedObj.setTranslateZ(res.getIntersectedPoint().getZ());
@@ -437,14 +467,20 @@ public class CircuitLab extends Application {
             int col = (int) ma.fetchCell(facenum, new fxpoint(res.getIntersectedPoint().getX(),res.getIntersectedPoint().getY(),res.getIntersectedPoint().getZ())).get(2);
             if (mo.filled == false) {
                 boxGroup.getChildren().addAll(placedObj);
-                ma.mArr[row][col].changeObj(placedObj, selectedObj.toLowerCase());
+                ma.mArr[row][col].changeObj(placedObj, selectedObj.toLowerCase(), turnCounter % 2);
             } else {
-                MeshView prevMV = ma.mArr[row][col].mv;
-                boxGroup.getChildren().remove(prevMV);
-                boxGroup.getChildren().addAll(placedObj);
-                ma.mArr[row][col].changeObj(placedObj, selectedObj.toLowerCase());
+                if(turnCounter % 2 == mo.id) {
+                    MeshView prevMV = ma.mArr[row][col].mv;
+                    boxGroup.getChildren().remove(prevMV);
+                    boxGroup.getChildren().addAll(placedObj);
+                    ma.mArr[row][col].changeObj(placedObj, selectedObj.toLowerCase(), turnCounter % 2);
+                } else {
+                    turnCounter--;
+                }
                 //ma.mArr[row][col].changeObj(stlMesh, selectedObj.toLowerCase());
             }
+            turnCounter++;
+            System.out.println(turnCounter);
         }
         
     }

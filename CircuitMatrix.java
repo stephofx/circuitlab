@@ -125,15 +125,17 @@ class MatrixObject {
       objectText = "";
       mv = null;
     }
-    public MatrixObject(MeshView mv1, String ot) {
+    public MatrixObject(MeshView mv1, String ot, int i) {
         filled = true;
         mv = mv1;
         objectText = ot;
+        id = i;
     }
-    public void changeObj(MeshView mv1, String ot){
+    public void changeObj(MeshView mv1, String ot, int i){
         filled = true;
         mv = mv1;
         objectText = ot;
+        id = i;
     }
 }
 
